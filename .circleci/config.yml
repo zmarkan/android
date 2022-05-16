@@ -17,6 +17,9 @@ aliases:
         - gradle-v3-
   - &android-docker-image
     image: cimg/android:2022.04
+  - &save_gradle_cache
+    android/save-gradle-cache:
+      cache-prefix: v3
 
 orbs:
   android: circleci/android@2.0.3
@@ -39,8 +42,7 @@ jobs:
           command: |
             ./project/gradlew -p ./project assembleDebug assembleAndroidTest assembleGmsReleaseUnitTest :app:compileOssReleaseSources :app:packageGmsReleaseBundle app:assembleGmsDebugAndroidTest app:assembleOssDebugAndroidTest --scan
 
-      - android/save-gradle-cache:
-          cache-prefix: v3
+      - *save_gradle_cache
       - android/save-build-cache
       - persist_to_workspace:
           root: project/app/build/outputs/apk/oss/debug/
@@ -116,7 +118,7 @@ jobs:
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
-          test-command: ./gradlew createOssDebugCoverageReport --scan --no-daemon --max-workers 2
+          test-command: ./gradlew assembleAndroidTest createOssDebugCoverageReport --scan --no-daemon --max-workers 2
           system-image: system-images;android-29;default;x86_64
           restore-gradle-cache-post-emulator-launch: false
           run-tests-working-directory: ./project
@@ -132,6 +134,7 @@ jobs:
           max-tries: 2
           no-output-timeout: 30m
           save-gradle-cache: false
+      - *save_gradle_cache          
       - store_test_results:
           path: project/app/build/outputs/androidTest-results/connected/flavors/oss/
       - persist_to_workspace:
@@ -158,7 +161,7 @@ jobs:
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
-          test-command: ./gradlew createGmsDebugCoverageReport --scan --no-daemon --max-workers 2
+          test-command: ./gradlew assembleAndroidTest createGmsDebugCoverageReport --scan --no-daemon --max-workers 2
           system-image: system-images;android-29;google_apis;x86_64
           restore-gradle-cache-post-emulator-launch: false
           run-tests-working-directory: ./project
@@ -173,12 +176,13 @@ jobs:
           run-logcat: false
           max-tries: 2
           no-output-timeout: 30m
-          save-gradle-cache: false
+          save-gradle-cache: true
+
       - run:
           name: Debug
           command: |
             find -name report.xml
-
+      - *save_gradle_cache
       - store_test_results:
           path: project/app/build/outputs/androidTest-results/connected/flavors/gms/
       - persist_to_workspace:
