@@ -107,6 +107,9 @@ jobs:
       image: android:2022.04.1
     resource_class: large
     parallelism: 4
+    parameters:
+      system-image:
+        type: string
     environment:
       GRADLE_OPTS: "-Dkotlin.compiler.execution.strategy=in-process"
     steps:
@@ -269,6 +272,10 @@ workflows:
           requires:
             - build
       - oss-ui-tests:
+          name: oss-ui-tests-<< matrix.system-image >>
+          matrix:
+            parameters:
+              system-image: ["system-images;android-29;default;x86_64"]
           requires:
             - unit-test
       - gms-ui-tests:
