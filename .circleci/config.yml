@@ -108,8 +108,8 @@ jobs:
     resource_class: large
     parallelism: 4
     parameters:
-      system-image:
-        type: string
+      android-api-version:
+        type: integer
     environment:
       GRADLE_OPTS: "-Dkotlin.compiler.execution.strategy=in-process"
     steps:
@@ -122,7 +122,7 @@ jobs:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
           test-command: ./gradlew assembleAndroidTest createOssDebugCoverageReport --scan --no-daemon --max-workers 2
-          system-image: system-images;android-29;default;x86_64
+          system-image: system-images;android-<< parameters.android-api-version >>;default;x86_64
           restore-gradle-cache-post-emulator-launch: false
           run-tests-working-directory: ./project
           post-emulator-wait-steps:
@@ -137,7 +137,7 @@ jobs:
           max-tries: 2
           no-output-timeout: 30m
           save-gradle-cache: false
-      - *save_gradle_cache          
+      - *save_gradle_cache
       - store_test_results:
           path: project/app/build/outputs/androidTest-results/connected/flavors/oss/
       - persist_to_workspace:
@@ -272,10 +272,10 @@ workflows:
           requires:
             - build
       - oss-ui-tests:
-          name: oss-ui-tests-<< matrix.system-image >>
+          name: oss-ui-tests-<< matrix.android-api-version >>
           matrix:
             parameters:
-              system-image: ["system-images;android-29;default;x86_64"]
+              android-api-version: [29, 24]
           requires:
             - unit-test
       - gms-ui-tests:
