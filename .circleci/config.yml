@@ -282,7 +282,7 @@ workflows:
           name: oss-ui-tests-<< matrix.android-api-version >>
           matrix:
             parameters:
-              android-api-version: [29]
+              android-api-version: [29, 30]
           requires:
             - unit-test
       - gms-ui-tests:
