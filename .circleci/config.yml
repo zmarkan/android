@@ -153,6 +153,9 @@ jobs:
       image: android:2022.04.1
     resource_class: large
     parallelism: 4
+    parameters:
+      android-api-version:
+        type: integer
     environment:
       GRADLE_OPTS: "-Dkotlin.compiler.execution.strategy=in-process"
     steps:
@@ -164,8 +167,8 @@ jobs:
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
-          test-command: ./gradlew assembleAndroidTest createGmsDebugCoverageReport --scan --no-daemon --max-workers 2
-          system-image: system-images;android-29;google_apis;x86_64
+          test-command: ./gradlew assembleAndroidTest createGmsDebugCoverageReport --scan --no-daemon --max-workers 2          
+          system-image: system-images;android-<< parameters.android-api-version >>;google_apis;x86_64
           restore-gradle-cache-post-emulator-launch: false
           run-tests-working-directory: ./project
           post-emulator-wait-steps:
@@ -275,10 +278,14 @@ workflows:
           name: oss-ui-tests-<< matrix.android-api-version >>
           matrix:
             parameters:
-              android-api-version: [29, 24]
+              android-api-version: [29]
           requires:
             - unit-test
       - gms-ui-tests:
+          name: gms-ui-tests-<< matrix.android-api-version >>
+          matrix:
+            parameters:
+              android-api-version: [29]
           requires:
             - unit-test
       - publish-coverage:
