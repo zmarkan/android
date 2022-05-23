@@ -138,15 +138,19 @@ jobs:
           no-output-timeout: 30m
           save-gradle-cache: false
       - *save_gradle_cache
+      - run:
+          name: Rename coverage for workspace persist
+          command: |
+            mv project/app/build/reports/coverage/androidTest/oss/debug/report.xml project/app/build/reports/coverage/androidTest/oss/debug/report-<< parameters.android-api-version>>.xml
       - store_test_results:
           path: project/app/build/outputs/androidTest-results/connected/flavors/oss/
       - persist_to_workspace:
           root: project/app/build/
           paths:
-            - reports/coverage/androidTest/oss/debug/report.xml
+            - reports/coverage/androidTest/oss/debug/report-<< parameters.android-api-version>>.xml
       - store_artifacts:
           path: project/app/build/reports/androidTests
-          destination: espresso-report-oss
+          destination: espresso-report-oss-<< parameters.android-api-version >>
 
   gms-ui-tests:
     machine:
@@ -182,22 +186,22 @@ jobs:
           run-logcat: false
           max-tries: 2
           no-output-timeout: 30m
-          save-gradle-cache: true
+          save-gradle-cache: false
 
-      - run:
-          name: Debug
-          command: |
-            find -name report.xml
       - *save_gradle_cache
+      - run:
+          name: Rename coverage for workspace persist
+          command: |
+            mv project/app/build/reports/coverage/androidTest/gms/debug/report.xml project/app/build/reports/coverage/androidTest/gms/debug/report-<< parameters.android-api-version>>.xml      
       - store_test_results:
           path: project/app/build/outputs/androidTest-results/connected/flavors/gms/
       - persist_to_workspace:
           root: project/app/build/
           paths:
-            - reports/coverage/androidTest/gms/debug/report.xml
+            - reports/coverage/androidTest/gms/debug/report-<< parameters.android-api-version>>.xml
       - store_artifacts:
           path: project/app/build/reports/androidTests
-          destination: espresso-report-gms
+          destination: espresso-report-gms-<< parameters.android-api-version >>
 
   publish-coverage:
     docker:
@@ -228,7 +232,7 @@ jobs:
               -F uitests \
               -v \
               -Z \
-              -f reports/coverage/**/report.xml
+              -f reports/coverage/**/report-*.xml
       - run:
           name: Upload Codecov coverage for unit tests
           command: |
