@@ -105,7 +105,7 @@ jobs:
   oss-ui-tests:
     machine:
       image: android:2022.04.1
-    resource_class: xlarge
+    resource_class: large
     parallelism: 4
     parameters:
       android-api-version:
@@ -119,8 +119,6 @@ jobs:
       - *generate_gradle_cache_checksum
       - *restore_gradle_cache
       - android/start-emulator-and-run-tests:
-          additional-avd-args: "-d pixel_3a -c 1G"
-          additional-emulator-args: "-memory 4096 -cores 3"
           test-command: ./gradlew assembleAndroidTest createOssDebugCoverageReport --scan --no-daemon --max-workers 2
           system-image: system-images;android-<< parameters.android-api-version >>;default;x86_64
           restore-gradle-cache-post-emulator-launch: false
