@@ -121,7 +121,7 @@ jobs:
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
-          no-boot-anim: true
+          no-boot-anim: false
           test-command: ./gradlew assembleAndroidTest createOssDebugCoverageReport --scan --no-daemon --max-workers 2
           system-image: system-images;android-<< parameters.android-api-version >>;default;x86_64
           restore-gradle-cache-post-emulator-launch: false
@@ -267,44 +267,56 @@ jobs:
             ./project/gradlew -p ./project publishGmsReleaseBundle --scan
 
 workflows:
-  build-and-test:
+  just-test-ui-build:
     jobs:
       - build
-      - fdroid-scanner:
-          requires:
-            - build
-      - unit-test:
-          requires:
-            - build
-      - lint:
-          requires:
-            - build
       - oss-ui-tests:
-          name: oss-ui-tests-<< matrix.android-api-version >>
           matrix:
             parameters:
               android-api-version: [24, 29]
           requires:
-            - unit-test
-      - gms-ui-tests:
-          name: gms-ui-tests-<< matrix.android-api-version >>
-          matrix:
-            parameters:
-              android-api-version: [24, 29]
-          requires:
-            - unit-test
-      - publish-coverage:
-          requires:
-            - unit-test
-            - oss-ui-tests
-            - gms-ui-tests
-      - publish-to-play-store:
-          context: Android Deploy Credentials
-          requires:
-            - unit-test
-            - oss-ui-tests
-            - gms-ui-tests
-            - lint
-          filters:
-            branches:
-              only: master
+            - build
+
+
+
+  # build-and-test:
+  #   jobs:
+  #     - build
+  #     - fdroid-scanner:
+  #         requires:
+  #           - build
+  #     - unit-test:
+  #         requires:
+  #           - build
+  #     - lint:
+  #         requires:
+  #           - build
+  #     - oss-ui-tests:
+  #         name: oss-ui-tests-<< matrix.android-api-version >>
+  #         matrix:
+  #           parameters:
+  #             android-api-version: [24, 29]
+  #         requires:
+  #           - unit-test
+  #     - gms-ui-tests:
+  #         name: gms-ui-tests-<< matrix.android-api-version >>
+  #         matrix:
+  #           parameters:
+  #             android-api-version: [24, 29]
+  #         requires:
+  #           - unit-test
+  #     - publish-coverage:
+  #         requires:
+  #           - unit-test
+  #           - oss-ui-tests
+  #           - gms-ui-tests
+  #     - publish-to-play-store:
+  #         context: Android Deploy Credentials
+  #         requires:
+  #           - unit-test
+  #           - oss-ui-tests
+  #           - gms-ui-tests
+  #           - lint
+  #         filters:
+  #           branches:
+  #             only: master
