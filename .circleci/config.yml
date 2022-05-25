@@ -161,10 +161,14 @@ jobs:
       - android/accept-licenses
       - android/restore-build-cache
       - restore-gradle-cache
+      - run:
+          name: Prepare parameterised gradle test command
+          command: |
+            echo 'export GRADLE_TEST_COMMAND="./gradlew create${<< parameters.flavor >>^}DebugCoverageReport --scan --no-daemon --max-workers 2"' >> $BASH_ENV
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
-          test-command: "./gradlew create${<< parameters.flavor >>^}DebugCoverageReport --scan --no-daemon --max-workers 2"
+          test-command: $GRADLE_TEST_COMMAND
           system-image: system-images;android-29;google_apis;x86_64
           restore-gradle-cache-post-emulator-launch: false
           run-tests-working-directory: ./project
