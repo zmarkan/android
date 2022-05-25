@@ -20,6 +20,7 @@ aliases:
 
 orbs:
   android: circleci/android@2.0.3
+  codecov: codecov/codecov@3.2.2
 
 jobs:
   build:
@@ -80,6 +81,9 @@ jobs:
           root: project/app/build/
           paths:
             - jacoco/jacoco.xml
+      - codecov/upload:
+          file: project/app/build/jacoco/jacoco.xml
+          flags: unittests
 
   lint:
     docker:
@@ -141,6 +145,9 @@ jobs:
       - store_artifacts:
           path: project/app/build/reports/androidTests
           destination: espresso-report-oss
+      - codecov/upload:
+          file: reports/coverage/**/report.xml
+          flags: uitests
 
   gms-ui-tests:
     machine:
@@ -188,47 +195,10 @@ jobs:
       - store_artifacts:
           path: project/app/build/reports/androidTests
           destination: espresso-report-gms
+      - codecov/upload:
+          file: reports/coverage/**/report.xml
+          flags: uitests
 
-  publish-coverage:
-    docker:
-      - image: cimg/base:stable
-    resource_class: small
-    steps:
-      - checkout
-      - attach_workspace:
-          at: project/app/build/
-      - run:
-          command: curl -Os "https://uploader.codecov.io/latest/linux/codecov"
-          name: Download Codecov Uploader
-      - run:
-          command: |
-            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --import # One-time step
-            curl -Os "https://uploader.codecov.io/latest/linux/codecov.SHA256SUM"
-            curl -Os "https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig"
-            gpg --verify codecov.SHA256SUM.sig codecov.SHA256SUM
-            shasum -a 256 -c codecov.SHA256SUM || sha256sum -c codecov.SHA256SUM
-            chmod +x codecov
-          name: Validate Codecov Uploader
-      - run:
-          name: Upload Codecov coverage for espresso tests
-          command: |
-            ./codecov \
-              -Q CircleCI \
-              -n ${CIRCLE_BUILD_NUM} \
-              -F uitests \
-              -v \
-              -Z \
-              -f reports/coverage/**/report.xml
-      - run:
-          name: Upload Codecov coverage for unit tests
-          command: |
-            ./codecov \
-              -Q CircleCI \
-              -n ${CIRCLE_BUILD_NUM} \
-              -v \
-              -Z \
-              -F unittests \
-              -f project/app/build/jacoco/jacoco.xml
   publish-to-play-store:
     docker:
       - *android-docker-image
@@ -270,11 +240,6 @@ workflows:
       - gms-ui-tests:
           requires:
             - unit-test
-      - publish-coverage:
-          requires:
-            - unit-test
-            - oss-ui-tests
-            - gms-ui-tests
       - publish-to-play-store:
           context: Android Deploy Credentials
           requires:
