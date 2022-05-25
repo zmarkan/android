@@ -2,21 +2,27 @@
 # Machine image tags listed at https://circleci.com/developer/machine/image/android
 version: 2.1
 
-aliases:
-  - &generate_gradle_cache_checksum
-    run:
-      name: Generate cache checksum
-      command: |
-        find . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \) | sort | xargs cat | shasum | awk '{print $1}' > /tmp/gradle_cache_seed
-  - &restore_gradle_cache
-    restore_cache:
-      name: Restore gradle cache
-      keys:
-        - gradle-v3-{{ arch }}-{{ checksum "/tmp/gradle_cache_seed" }}
-        - gradle-v3-{{ arch }}-
-        - gradle-v3-
-  - &android-docker-image
-    image: cimg/android:2022.04
+commands:
+  restore-gradle-cache:
+    steps:
+      - run:
+          name: Generate cache checksum
+          command: |
+            find . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \) | sort | xargs cat | shasum | awk '{print $1}' > /tmp/gradle_cache_seed
+      - restore_cache:
+          name: Restore gradle cache
+          keys:
+            - gradle-v3-{{ arch }}-{{ checksum "/tmp/gradle_cache_seed" }}
+            - gradle-v3-{{ arch }}-
+            - gradle-v3-
+
+executors:
+  android-docker:
+    docker:
+      - image: cimg/android:2022.04
+  android-machine:
+    machine:
+      image: android:2022.04.1
 
 orbs:
   android: circleci/android@2.0.3
@@ -24,8 +30,7 @@ orbs:
 
 jobs:
   build:
-    docker:
-      - *android-docker-image
+    executor: android-docker
     resource_class: large
 
     steps:
@@ -33,8 +38,7 @@ jobs:
       - checkout
       - android/accept-licenses
       - android/restore-build-cache
-      - *generate_gradle_cache_checksum
-      - *restore_gradle_cache
+      - restore-gradle-cache
       - run:
           name: Build
           command: |
@@ -48,8 +52,7 @@ jobs:
           paths:
             - app-oss-debug.apk
   fdroid-scanner:
-    docker:
-      - *android-docker-image
+    executor: android-docker
     resource_class: small
     steps:
       - checkout
@@ -61,16 +64,14 @@ jobs:
             python3 ./.circleci/fdroid-scanner-stub.py
 
   unit-test:
-    docker:
-      - *android-docker-image
+    executor: android-docker
     resource_class: large
-
+    
     steps:
       - checkout
       - android/accept-licenses
       - android/restore-build-cache
-      - *generate_gradle_cache_checksum
-      - *restore_gradle_cache
+      - restore-gradle-cache
       - run:
           name: Unit Test
           command: |
@@ -86,16 +87,14 @@ jobs:
           flags: unittests
 
   lint:
-    docker:
-      - *android-docker-image
+    executor: android-docker
     resource_class: medium+
 
     steps:
       - checkout
       - android/accept-licenses
       - android/restore-build-cache
-      - *generate_gradle_cache_checksum
-      - *restore_gradle_cache
+      - restore-gradle-cache
       - run:
           name: Lint
           command: |
@@ -105,8 +104,7 @@ jobs:
           destination: lint-report
 
   oss-ui-tests:
-    machine:
-      image: android:2022.04.1
+    executor: android-machine
     resource_class: large
     parallelism: 4
     environment:
@@ -115,8 +113,7 @@ jobs:
       - checkout
       - android/accept-licenses
       - android/restore-build-cache
-      - *generate_gradle_cache_checksum
-      - *restore_gradle_cache
+      - restore-gradle-cache
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
@@ -150,8 +147,7 @@ jobs:
           flags: uitests
 
   gms-ui-tests:
-    machine:
-      image: android:2022.04.1
+    executor: android-machine
     resource_class: large
     parallelism: 4
     environment:
@@ -160,8 +156,7 @@ jobs:
       - checkout
       - android/accept-licenses
       - android/restore-build-cache
-      - *generate_gradle_cache_checksum
-      - *restore_gradle_cache
+      - restore-gradle-cache
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
@@ -200,8 +195,7 @@ jobs:
           flags: uitests
 
   publish-to-play-store:
-    docker:
-      - *android-docker-image
+    executor: android-docker
     resource_class: medium
 
     steps:
@@ -209,8 +203,7 @@ jobs:
       - checkout
       - android/accept-licenses
       - android/restore-build-cache
-      - *generate_gradle_cache_checksum
-      - *restore_gradle_cache
+      - restore-gradle-cache
       - run:
           name: Set credentials
           command: |
