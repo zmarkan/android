@@ -66,7 +66,7 @@ jobs:
   unit-test:
     executor: android-docker
     resource_class: large
-    
+
     steps:
       - checkout
       - android/accept-licenses
@@ -139,7 +139,7 @@ jobs:
             # Debug only
             source $BASH_ENV  
             echo "Emulator system image: $SYSTEM_IMAGE"
-          
+
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
@@ -176,7 +176,7 @@ jobs:
       - codecov/upload:
           file: reports/coverage/**/report.xml
           flags: uitests
-      
+
   publish-to-play-store:
     executor: android-docker
     resource_class: medium
@@ -198,14 +198,6 @@ jobs:
             ./project/gradlew -p ./project publishGmsReleaseBundle --scan
 
 workflows:
-  # experiment:
-  #   jobs:
-  #     - ui-tests:
-  #         name: ui-tests-oss
-  #         flavor: oss
-  #     - ui-tests:
-  #         name: ui-tests-gms
-  #         flavor: gms
   build-and-test:
     jobs:
       - build
