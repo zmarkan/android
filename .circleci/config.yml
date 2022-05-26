@@ -103,49 +103,6 @@ jobs:
           path: project/app/build/reports/lint-results.html
           destination: lint-report
 
-  oss-ui-tests:
-    executor: android-machine
-    resource_class: large
-    parallelism: 4
-    environment:
-      GRADLE_OPTS: "-Dkotlin.compiler.execution.strategy=in-process"
-    steps:
-      - checkout
-      - android/accept-licenses
-      - android/restore-build-cache
-      - restore-gradle-cache
-      - android/start-emulator-and-run-tests:
-          additional-avd-args: "-d pixel_3a -c 1G"
-          additional-emulator-args: "-memory 4096 -cores 3"
-          test-command: ./gradlew createOssDebugCoverageReport --scan --no-daemon --max-workers 2
-          system-image: system-images;android-29;default;x86_64
-          restore-gradle-cache-post-emulator-launch: false
-          run-tests-working-directory: ./project
-          post-emulator-wait-steps:
-            - run: adb shell settings put secure location_providers_allowed +gps && adb shell settings put secure location_providers_allowed +network && adb shell settings put secure location_mode 3 && adb shell settings put global heads_up_notifications_enabled 0 && adb root && sleep 5 && adb shell setprop ctl.restart zygote
-            - run:
-                background: true
-                command: |
-                  adb logcat
-                name: Logcat
-          post-emulator-launch-assemble-command: ""
-          run-logcat: false
-          max-tries: 2
-          no-output-timeout: 30m
-          save-gradle-cache: false
-      - store_test_results:
-          path: project/app/build/outputs/androidTest-results/connected/flavors/oss/
-      - persist_to_workspace:
-          root: project/app/build/
-          paths:
-            - reports/coverage/androidTest/oss/debug/report.xml
-      - store_artifacts:
-          path: project/app/build/reports/androidTests
-          destination: espresso-report-oss
-      - codecov/upload:
-          file: reports/coverage/**/report.xml
-          flags: uitests
-
   ui-tests:
     parameters:
       flavor:
@@ -220,54 +177,6 @@ jobs:
           file: reports/coverage/**/report.xml
           flags: uitests
       
-  gms-ui-tests:
-    executor: android-machine
-    resource_class: large
-    parallelism: 4
-    environment:
-      GRADLE_OPTS: "-Dkotlin.compiler.execution.strategy=in-process"
-    steps:
-      - checkout
-      - android/accept-licenses
-      - android/restore-build-cache
-      - restore-gradle-cache
-      - android/start-emulator-and-run-tests:
-          additional-avd-args: "-d pixel_3a -c 1G"
-          additional-emulator-args: "-memory 4096 -cores 3"
-          test-command: ./gradlew createGmsDebugCoverageReport --scan --no-daemon --max-workers 2
-          system-image: system-images;android-29;google_apis;x86_64
-          restore-gradle-cache-post-emulator-launch: false
-          run-tests-working-directory: ./project
-          post-emulator-wait-steps:
-            - run: adb shell settings put secure location_providers_allowed +gps && adb shell settings put secure location_providers_allowed +network && adb shell settings put secure location_mode 3 && adb shell settings put global heads_up_notifications_enabled 0 && adb root && sleep 5 && adb shell setprop ctl.restart zygote
-            - run:
-                background: true
-                command: |
-                  adb logcat
-                name: Logcat
-          post-emulator-launch-assemble-command: ""
-          run-logcat: false
-          max-tries: 2
-          no-output-timeout: 30m
-          save-gradle-cache: false
-      - run:
-          name: Debug
-          command: |
-            find -name report.xml
-
-      - store_test_results:
-          path: project/app/build/outputs/androidTest-results/connected/flavors/gms/
-      - persist_to_workspace:
-          root: project/app/build/
-          paths:
-            - reports/coverage/androidTest/gms/debug/report.xml
-      - store_artifacts:
-          path: project/app/build/reports/androidTests
-          destination: espresso-report-gms
-      - codecov/upload:
-          file: reports/coverage/**/report.xml
-          flags: uitests
-
   publish-to-play-store:
     executor: android-docker
     resource_class: medium
@@ -289,43 +198,43 @@ jobs:
             ./project/gradlew -p ./project publishGmsReleaseBundle --scan
 
 workflows:
-  experiment:
-    jobs:
-      - ui-tests:
-          name: ui-tests-oss
-          flavor: oss
-      - ui-tests:
-          name: ui-tests-gms
-          flavor: gms
-  # build-and-test:
+  # experiment:
   #   jobs:
-  #     - build
-  #     - fdroid-scanner:
-  #         requires:
-  #           - build
-  #     - unit-test:
-  #         requires:
-  #           - build
-  #     - lint:
-  #         requires:
-  #           - build
   #     - ui-tests:
+  #         name: ui-tests-oss
   #         flavor: oss
-  #         name: oss-ui-tests
-  #         requires:
-  #           - unit-test
   #     - ui-tests:
+  #         name: ui-tests-gms
   #         flavor: gms
-  #         name: gms-ui-tests
-  #         requires:
-  #           - unit-test
-  #     - publish-to-play-store:
-  #         context: Android Deploy Credentials
-  #         requires:
-  #           - unit-test
-  #           - oss-ui-tests
-  #           - gms-ui-tests
-  #           - lint
-  #         filters:
-  #           branches:
-  #             only: master
+  build-and-test:
+    jobs:
+      - build
+      - fdroid-scanner:
+          requires:
+            - build
+      - unit-test:
+          requires:
+            - build
+      - lint:
+          requires:
+            - build
+      - ui-tests:
+          flavor: oss
+          name: oss-ui-tests
+          requires:
+            - unit-test
+      - ui-tests:
+          flavor: gms
+          name: gms-ui-tests
+          requires:
+            - unit-test
+      - publish-to-play-store:
+          context: Android Deploy Credentials
+          requires:
+            - unit-test
+            - oss-ui-tests
+            - gms-ui-tests
+            - lint
+          filters:
+            branches:
+              only: master
