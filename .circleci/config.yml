@@ -172,7 +172,7 @@ jobs:
             source $BASH_ENV
             echo "flavor from bash env"
             echo $FLAVOR
-            echo `export GRADLE_TEST_COMMAND=./gradlew create${flavor^}DebugCoverageReport --scan --no-daemon --max-workers 2" >> $BASH_ENV
+            echo "export GRADLE_TEST_COMMAND=\"./gradlew create${FLAVOR^}DebugCoverageReport --scan --no-daemon --max-workers 2\"" >> $BASH_ENV
             source $BASH_ENV
             echo "gradle test cmd"
             echo $GRADLE_TEST_COMMAND
