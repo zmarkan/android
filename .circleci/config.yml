@@ -164,8 +164,14 @@ jobs:
       - run:
           name: Prepare parameterised gradle test command
           command: |
+            echo "prepare parameterised gradle test command"
             flavor=<< parameters.flavor >>
-            echo 'export GRADLE_TEST_COMMAND="./gradlew create${flavor^}DebugCoverageReport --scan --no-daemon --max-workers 2"' >> $BASH_ENV
+            echo $flavor
+            echo "export FLAVOR=$flavor" >> $BASH_ENV
+            source $BASH_ENV
+            echo $FLAVOR
+            echo `export GRADLE_TEST_COMMAND=./gradlew create${flavor^}DebugCoverageReport --scan --no-daemon --max-workers 2" >> $BASH_ENV
+            source $BASH_ENV
             echo $GRADLE_TEST_COMMAND
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
@@ -273,35 +279,41 @@ jobs:
             ./project/gradlew -p ./project publishGmsReleaseBundle --scan
 
 workflows:
-  build-and-test:
+  experiment:
     jobs:
-      - build
-      - fdroid-scanner:
-          requires:
-            - build
-      - unit-test:
-          requires:
-            - build
-      - lint:
-          requires:
-            - build
       - ui-tests:
           flavor: oss
-          name: oss-ui-tests
-          requires:
-            - unit-test
       - ui-tests:
           flavor: gms
-          name: gms-ui-tests
-          requires:
-            - unit-test
-      - publish-to-play-store:
-          context: Android Deploy Credentials
-          requires:
-            - unit-test
-            - oss-ui-tests
-            - gms-ui-tests
-            - lint
-          filters:
-            branches:
-              only: master
+  # build-and-test:
+  #   jobs:
+  #     - build
+  #     - fdroid-scanner:
+  #         requires:
+  #           - build
+  #     - unit-test:
+  #         requires:
+  #           - build
+  #     - lint:
+  #         requires:
+  #           - build
+  #     - ui-tests:
+  #         flavor: oss
+  #         name: oss-ui-tests
+  #         requires:
+  #           - unit-test
+  #     - ui-tests:
+  #         flavor: gms
+  #         name: gms-ui-tests
+  #         requires:
+  #           - unit-test
+  #     - publish-to-play-store:
+  #         context: Android Deploy Credentials
+  #         requires:
+  #           - unit-test
+  #           - oss-ui-tests
+  #           - gms-ui-tests
+  #           - lint
+  #         filters:
+  #           branches:
+  #             only: master
