@@ -162,25 +162,32 @@ jobs:
       - android/restore-build-cache
       - restore-gradle-cache
       - run:
-          name: Prepare parameterised gradle test command
+          name: Prepare parameterised test command
           command: |
-            echo "prepare parameterised gradle test command"
-            flavor=<< parameters.flavor >>
-            echo "flavor from local variable"
-            echo $flavor
-            echo "export FLAVOR=$flavor" >> $BASH_ENV
+            echo "export FLAVOR=<< parameters.flavor >>" >> $BASH_ENV
             source $BASH_ENV
-            echo "flavor from bash env"
-            echo $FLAVOR
             echo "export GRADLE_TEST_COMMAND=\"./gradlew create${FLAVOR^}DebugCoverageReport --scan --no-daemon --max-workers 2\"" >> $BASH_ENV
             source $BASH_ENV
-            echo "gradle test cmd"
-            echo $GRADLE_TEST_COMMAND
+            echo "Gradle test command: $GRADLE_TEST_COMMAND"
+
+      - run:
+          name: Prepare parameterised system image
+          command: |
+            if [ << parameters.flavor >> = "gms" ]; then
+              image_type="google_apis"
+            else
+              image_type="default"
+            fi
+            echo "export SYSTEM_IMAGE=\"system-images;android-29;$image_type;x86_64\"" >> $BASH_ENV
+            # Debug only
+            source $BASH_ENV  
+            echo "Emulator system image: $SYSTEM_IMAGE"
+          
       - android/start-emulator-and-run-tests:
           additional-avd-args: "-d pixel_3a -c 1G"
           additional-emulator-args: "-memory 4096 -cores 3"
           test-command: $GRADLE_TEST_COMMAND
-          system-image: system-images;android-29;google_apis;x86_64
+          system-image: $SYSTEM_IMAGE
           restore-gradle-cache-post-emulator-launch: false
           run-tests-working-directory: ./project
           post-emulator-wait-steps:
