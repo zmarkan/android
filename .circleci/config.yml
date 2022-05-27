@@ -210,23 +210,27 @@ workflows:
       - lint:
           requires:
             - build
+      - approve-ui-tests:
+          type: approval
+          requires:
+            - lint
+            - unit-test
+            - fdroid-scanner
       - ui-tests:
           flavor: oss
           name: oss-ui-tests
           requires:
-            - unit-test
+            - approve-ui-tests
       - ui-tests:
           flavor: gms
           name: gms-ui-tests
           requires:
-            - unit-test
+            - approve-ui-tests
       - publish-to-play-store:
           context: Android Deploy Credentials
           requires:
-            - unit-test
             - oss-ui-tests
             - gms-ui-tests
-            - lint
           filters:
             branches:
               only: master
