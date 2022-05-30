@@ -210,6 +210,9 @@ workflows:
       - lint:
           requires:
             - build
+      - fdroid-scanner:
+          requires:
+            - build
           
   build-and-test:
     when:
