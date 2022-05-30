@@ -13,6 +13,18 @@ executors:
     machine:
       image: android:2022.04.1
 
+commands:
+  save-gradle-cache:
+    steps:
+     - android/save-gradle-cache:
+          cache-prefix: v3
+  restore-gradle-cache:
+    steps:
+      - android/restore-gradle-cache: # Uses all source files for the cache checksum
+          cache-prefix: v3
+          find-args: . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \)
+
+
 orbs:
   android: circleci/android@2.0.3
   codecov: codecov/codecov@3.2.2
@@ -26,15 +38,12 @@ jobs:
       # Checkout the code as the first step.
       - checkout
       - android/accept-licenses
-      - android/restore-gradle-cache:
-          cache-prefix: v3
-          find-args: . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \)
+      - restore-gradle-cache
       - run:
           name: Build
           command: |
             ./project/gradlew -p ./project assembleDebug assembleAndroidTest assembleGmsReleaseUnitTest :app:compileOssReleaseSources :app:packageGmsReleaseBundle app:assembleGmsDebugAndroidTest app:assembleOssDebugAndroidTest --scan
-      - android/save-gradle-cache:
-          cache-prefix: v3
+      - save-gradle-cache
       - persist_to_workspace:
           root: project/app/build/outputs/apk/oss/debug/
           paths:
@@ -58,16 +67,12 @@ jobs:
     steps:
       - checkout
       - android/accept-licenses
-      - android/restore-gradle-cache:
-          cache-prefix: v3
-          find-args: . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \)
-
+      - restore-gradle-cache
       - run:
           name: Unit Test
           command: |
             ./project/gradlew -p ./project jacocoTestGmsReleaseUnitTestReport --scan
-      - android/save-gradle-cache:
-          cache-prefix: v3
+      - save-gradle-cache
       - store_test_results:
           path: project/app/build/test-results/testGmsReleaseUnitTest
       - persist_to_workspace:
@@ -85,16 +90,12 @@ jobs:
     steps:
       - checkout
       - android/accept-licenses
-      - android/restore-gradle-cache:
-          cache-prefix: v3
-          find-args: . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \)
-
+      - restore-gradle-cache
       - run:
           name: Lint
           command: |
             ./project/gradlew -p ./project lint --scan
-      - android/save-gradle-cache:
-          cache-prefix: v3
+      - save-gradle-cache
       - store_artifacts:
           path: project/app/build/reports/lint-results.html
           destination: lint-report
@@ -112,10 +113,7 @@ jobs:
     steps:
       - checkout
       - android/accept-licenses
-      - android/restore-gradle-cache:
-          cache-prefix: v3
-          find-args: . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \)
-
+      - restore-gradle-cache
       - run:
           name: Prepare parameterised test command
           command: |
@@ -160,8 +158,7 @@ jobs:
           name: Debug
           command: |
             find -name report.xml
-      - android/save-gradle-cache:
-          cache-prefix: v3
+      - save-gradle-cache
       - store_test_results:
           path: project/app/build/outputs/androidTest-results/connected/flavors/<< parameters.flavor >>/
       - persist_to_workspace:
@@ -183,10 +180,7 @@ jobs:
       # Checkout the code as the first step.
       - checkout
       - android/accept-licenses
-      - android/restore-gradle-cache:
-          cache-prefix: v3  
-          find-args: . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \)
-    
+      - restore-gradle-cache
       - run:
           name: Set credentials
           command: |
@@ -196,8 +190,7 @@ jobs:
           name: Build
           command: |
             ./project/gradlew -p ./project publishGmsReleaseBundle --scan
-      - android/save-gradle-cache:
-          cache-prefix: v3
+      - save-gradle-cache
 
 workflows:
   evaluate-oss-contribution:
