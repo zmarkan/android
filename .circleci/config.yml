@@ -13,6 +13,7 @@ jobs:
       - image: cimg/base:stable
     resource_class: small
     steps:
+      - checkout
       - run:
           name: Evaluate whether running within repo or as forked PR
           command: |
