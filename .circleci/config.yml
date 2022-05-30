@@ -11,7 +11,7 @@ jobs:
   check-if-forked:
     docker: 
       - image: cimg/base:stable
-    resource-class: small
+    resource_class: small
     steps:
       - run:
           name: Evaluate whether running within repo or as forked PR
@@ -26,7 +26,7 @@ jobs:
             
       - continuation/continue:
           parameters: pipeline-params.json
-          configuration-path: .circleci/continue-pipeline-config.yml
+          configuration_path: .circleci/continue-pipeline-config.yml
 
 workflows:
   always-run:
