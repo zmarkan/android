@@ -27,7 +27,7 @@ jobs:
             
       - continuation/continue:
           parameters: pipeline-params.json
-          configuration_path: .circleci/continue-pipeline-config.yml
+          configuration_path: .circleci/continue-config.yml
 workflows:
   always-run:
     jobs:
