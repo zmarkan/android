@@ -1,5 +1,3 @@
----
-# Machine image tags listed at https://circleci.com/developer/machine/image/android
 version: 2.1
 
 parameters:
