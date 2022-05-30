@@ -5,20 +5,6 @@ parameters:
     type: boolean
     default: false
 
-commands:
-  restore-gradle-cache:
-    steps:
-      - run:
-          name: Generate cache checksum
-          command: |
-            find . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \) | sort | xargs cat | shasum | awk '{print $1}' > /tmp/gradle_cache_seed
-      - restore_cache:
-          name: Restore gradle cache
-          keys:
-            - gradle-v3-{{ arch }}-{{ checksum "/tmp/gradle_cache_seed" }}
-            - gradle-v3-{{ arch }}-
-            - gradle-v3-
-
 executors:
   android-docker:
     docker:
@@ -40,16 +26,14 @@ jobs:
       # Checkout the code as the first step.
       - checkout
       - android/accept-licenses
-      - android/restore-build-cache
-      - restore-gradle-cache
+      - android/restore-gradle-cache:
+          cache-prefix: v3
       - run:
           name: Build
           command: |
             ./project/gradlew -p ./project assembleDebug assembleAndroidTest assembleGmsReleaseUnitTest :app:compileOssReleaseSources :app:packageGmsReleaseBundle app:assembleGmsDebugAndroidTest app:assembleOssDebugAndroidTest --scan
-
       - android/save-gradle-cache:
           cache-prefix: v3
-      - android/save-build-cache
       - persist_to_workspace:
           root: project/app/build/outputs/apk/oss/debug/
           paths:
@@ -73,12 +57,14 @@ jobs:
     steps:
       - checkout
       - android/accept-licenses
-      - android/restore-build-cache
-      - restore-gradle-cache
+      - android/restore-gradle-cache:
+          cache-prefix: v3
       - run:
           name: Unit Test
           command: |
             ./project/gradlew -p ./project jacocoTestGmsReleaseUnitTestReport --scan
+      - android/save-gradle-cache:
+          cache-prefix: v3
       - store_test_results:
           path: project/app/build/test-results/testGmsReleaseUnitTest
       - persist_to_workspace:
@@ -96,12 +82,14 @@ jobs:
     steps:
       - checkout
       - android/accept-licenses
-      - android/restore-build-cache
-      - restore-gradle-cache
+      - android/restore-gradle-cache:
+          cache-prefix: v3
       - run:
           name: Lint
           command: |
             ./project/gradlew -p ./project lint --scan
+      - android/save-gradle-cache:
+          cache-prefix: v3
       - store_artifacts:
           path: project/app/build/reports/lint-results.html
           destination: lint-report
@@ -119,8 +107,8 @@ jobs:
     steps:
       - checkout
       - android/accept-licenses
-      - android/restore-build-cache
-      - restore-gradle-cache
+      - android/restore-gradle-cache:
+          cache-prefix: v3
       - run:
           name: Prepare parameterised test command
           command: |
@@ -161,12 +149,12 @@ jobs:
           run-logcat: false
           max-tries: 2
           no-output-timeout: 30m
-          save-gradle-cache: false
       - run:
           name: Debug
           command: |
             find -name report.xml
-
+      - android/save-gradle-cache:
+          cache-prefix: v3
       - store_test_results:
           path: project/app/build/outputs/androidTest-results/connected/flavors/<< parameters.flavor >>/
       - persist_to_workspace:
@@ -188,8 +176,8 @@ jobs:
       # Checkout the code as the first step.
       - checkout
       - android/accept-licenses
-      - android/restore-build-cache
-      - restore-gradle-cache
+      - android/restore-gradle-cache:
+          cache-prefix: v3      
       - run:
           name: Set credentials
           command: |
@@ -199,7 +187,8 @@ jobs:
           name: Build
           command: |
             ./project/gradlew -p ./project publishGmsReleaseBundle --scan
-
+      - android/save-gradle-cache:
+          cache-prefix: v3
 
 workflows:
   evaluate-oss-contribution:
