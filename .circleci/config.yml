@@ -16,7 +16,7 @@ jobs:
       - run:
           name: Evaluate whether running within repo or as forked PR
           command: |
-            if [ -z "$CIRCLE_PR_REPONAME "] #If this exists then it's a forked PR
+            if [ -z "$CIRCLE_PR_REPONAME" ] #If this exists then it's a forked PR
             then
               echo "In OSS contribution flow"
               echo '{}' | jq '. += { "oss-contribution-flow" : true}' >  pipeline-params.json            
