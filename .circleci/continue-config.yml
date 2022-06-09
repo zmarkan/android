@@ -239,7 +239,7 @@ workflows:
           requires:
             - build
       - smoke-tests:
-          requres:
+          requires:
             - build
           
   build-and-test:
