@@ -21,3 +21,4 @@ Pull requests welcome! Please see [CONTRIBUTING.md](https://github.com/owntracks
 If you spot a translation issue or want to help contribute translating the app into other languages, you can visit [POEditor](https://poeditor.com/projects/view?id=419041) and help out.
 
 [![CircleCI](https://circleci.com/gh/owntracks/android/tree/master.svg?style=shield)](https://circleci.com/gh/owntracks/android/tree/master)
+
