@@ -118,7 +118,7 @@ jobs:
                 adb shell am instrument \
                 -w -e annotation 'org.owntracks.android.testutils.suites.SmokeTest' \
                 org.owntracks.android.debug.test/androidx.test.runner.AndroidJUnitRunner
-              system-image: $SYSTEM_IMAGE
+              system-image: system-images;android-29;google_apis;x86_64
               restore-gradle-cache-post-emulator-launch: false
               run-tests-working-directory: ./project
               post-emulator-wait-steps:
