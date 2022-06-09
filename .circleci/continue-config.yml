@@ -100,6 +100,38 @@ jobs:
           path: project/app/build/reports/lint-results.html
           destination: lint-report
 
+  smoke-tests:
+    executor: android-machine
+    resource_class: large
+    environment:
+        GRADLE_OPTS: "-Dkotlin.compiler.execution.strategy=in-process"
+    steps:
+          - checkout
+          - android/accept-licenses
+          - restore-gradle-cache
+          - android/start-emulator-and-run-tests:
+              additional-avd-args: "-d pixel_3a -c 1G"
+              additional-emulator-args: "-memory 4096 -cores 3"
+              test-command: |
+                adb install app/build/outputs/apk/gms/debug/app-gms-debug.apk
+                adb install app/build/outputs/apk/androidTest/gms/debug/app-gms-debug-androidTest.apk
+                adb shell am instrument \
+                -w -e annotation 'org.owntracks.android.testutils.suites.SmokeTest' \
+                org.owntracks.android.debug.test/androidx.test.runner.AndroidJUnitRunner
+              system-image: $SYSTEM_IMAGE
+              restore-gradle-cache-post-emulator-launch: false
+              run-tests-working-directory: ./project
+              post-emulator-wait-steps:
+                - run: adb shell settings put secure location_providers_allowed +gps && adb shell settings put secure location_providers_allowed +network && adb shell settings put secure location_mode 3 && adb shell settings put global heads_up_notifications_enabled 0 && adb root && sleep 5 && adb shell setprop ctl.restart zygote
+                - run:
+                    background: true
+                    command: |
+                      adb logcat
+                    name: Logcat
+              post-emulator-launch-assemble-command: ./gradlew app:assembleGmsDebug app:assembleGmsDebugAndroidTest
+              run-logcat: false
+              max-tries: 2
+              no-output-timeout: 30m
   ui-tests:
     parameters:
       flavor:
@@ -205,6 +237,9 @@ workflows:
             - build
       - fdroid-scanner:
           requires:
+            - build
+      - smoke-tests:
+          requres:
             - build
           
   build-and-test:

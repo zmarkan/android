@@ -12,16 +12,20 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.owntracks.android.R
 import org.owntracks.android.testutils.TestWithAnActivity
+import org.owntracks.android.testutils.suites.SmokeTest
 import org.owntracks.android.ui.regions.RegionsActivity
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class RegionsActivityTests : TestWithAnActivity<RegionsActivity>(RegionsActivity::class.java) {
+
+    @SmokeTest
     @Test
     fun initialRegionsActivityIsEmpty() {
         assertDisplayed(R.string.waypointListPlaceholder)
         assertDisplayed(R.id.add)
     }
+
 
     @Test
     fun whenAddingARegionThenTheRegionIsShown() {
