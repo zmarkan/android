@@ -24,7 +24,6 @@ commands:
           cache-prefix: v3
           find-args: . -name 'build.gradle.kts' -o -name "libs.versions.toml" -o -name "gradle-wrapper.properties" -o \(  -path "./project/app/src/*" -a  \( -name "*.kt" -o -name "*.java" \) \)
 
-
 orbs:
   android: circleci/android@2.0.3
   codecov: codecov/codecov@3.2.2
@@ -172,10 +171,37 @@ jobs:
           file: reports/coverage/**/report.xml
           flags: uitests
 
+  smoke-test:
+    executor: android-machine
+    resource_class: large
+    environment:
+      GRADLE_OPTS: "-Dkotlin.compiler.execution.strategy=in-process"
+    steps:
+      - checkout
+      - android/accept-licenses
+      - restore-gradle-cache
+      - android/start-emulator-and-run-tests:
+          additional-avd-args: "-d pixel_3a -c 1G"
+          additional-emulator-args: "-memory 4096 -cores 3"
+          test-command: ./gradlew connectedGmsDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=org.owntracks.android.testutils.SmokeTest
+          system-image: system-images;android-29;google_apis;x86_64
+          restore-gradle-cache-post-emulator-launch: false
+          run-tests-working-directory: ./project
+          post-emulator-wait-steps:
+            - run: adb shell settings put secure location_providers_allowed +gps && adb shell settings put secure location_providers_allowed +network && adb shell settings put secure location_mode 3 && adb shell settings put global heads_up_notifications_enabled 0 && adb root && sleep 5 && adb shell setprop ctl.restart zygote
+            - run:
+                background: true
+                command: |
+                  adb logcat
+                name: Logcat
+          post-emulator-launch-assemble-command: ""
+          run-logcat: false
+          max-tries: 2
+          no-output-timeout: 30m
+
   publish-to-play-store:
     executor: android-docker
     resource_class: medium
-
     steps:
       # Checkout the code as the first step.
       - checkout
@@ -204,6 +230,9 @@ workflows:
           requires:
             - build
       - fdroid-scanner:
+          requires:
+            - build
+      - smoke-test:
           requires:
             - build
           
